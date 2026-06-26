@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWS AIF-C01 Exam Simulator</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #020617;
+      --surface-alt: #111827;
+      --border: #1f2937;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.1);
+      --danger: #f97373;
+      --success: #4ade80;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --radius: 0.75rem;
+      --shadow: 0 24px 80px rgba(0,0,0,0.65);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 48%, #000 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .app-shell {
+      width: 100%;
+      max-width: 1120px;
+      background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(8,47,73,0.96));
+      border-radius: 1.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(24px);
+    }
+    header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.15), transparent 55%);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 1rem;
+      background: radial-gradient(circle at 30% 20%, #f9fafb 0, #38bdf8 28%, #0ea5e9 55%, #1d4ed8 100%);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.4), 0 16px 40px rgba(8, 47, 73, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 18%;
+      border-radius: 999px;
+      border: 2px solid rgba(15, 23, 42, 0.9);
+      transform-origin: center;
+    }
+    .brand-mark::before {
+      transform: rotate(32deg);
+    }
+    .brand-mark::after {
+      transform: rotate(-32deg);
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .brand-text h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+    .brand-text span {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #9ca3af;
+    }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .pill {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.75);
+    }
+    .pill.accent {
+      border-color: rgba(56, 189, 248, 0.7);
+      color: #e0f2fe;
+      background: linear-gradient(135deg, rgba(56,189,248,0.25), rgba(56,189,248,0.05));
+    }
+    main {
+      padding: 20px 24px 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 1.2fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .panel {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+      border-radius: var(--radius);
+      border: 1px solid rgba(30, 64, 175, 0.5);
+      padding: 18px 18px 16px;
+      box-shadow: 0 18px 40px rgba(6, 21, 55, 0.85);
+      position: relative;
+      overflow: hidden;
+    }
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(56,189,248,0.18), transparent 55%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+    .panel-inner {
+      position: relative;
+      z-index: 1;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .panel-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .panel-title {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #9ca3af;
+    }
+    .panel-subtitle {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .timer {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,0.5);
+      background: radial-gradient(circle at 0 0, rgba(56,189,248,0.18), rgba(15,23,42,0.95));
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .timer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34,197,94,0.9);
+    }
+    .timer-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #bae6fd;
+    }
+    .timer-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e0f2fe;
+    }
+    .question-number-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .question-index {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #64748b;
+    }
+    .question-badge {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: #e5e7eb;
+      background: rgba(15, 23, 42, 0.8);
+    }
+    .question-text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #e5e7eb;
+      margin-bottom: 12px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .option {
+      position: relative;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(17,24,39,0.98));
+      padding: 10px 11px 10px 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      min-height: 42px;
+      transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+    }
+    .option:hover {
+      border-color: rgba(56, 189, 248, 0.7);
+      box-shadow: 0 10px 30px rgba(15,23,42,0.9);
+      transform: translateY(-1px);
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.12), rgba(15,23,42,0.98));
+    }
+    .option.selected {
+      border-color: rgba(56, 189, 248, 0.95);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.8), 0 16px 50px rgba(8,47,73,0.9);
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.98));
+    }
+    .option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .option-key {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #e5e7eb;
+      background: radial-gradient(circle at top, rgba(15,23,42,1), rgba(15,23,42,0.9));
+    }
+    .option.selected .option-key {
+      border-color: rgba(56,189,248,0.95);
+      background: radial-gradient(circle at top, #0ea5e9, #0369a1);
+      color: #f9fafb;
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.85), 0 0 18px rgba(56,189,248,0.85);
+    }
+    .option-label {
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+    .option-label span {
+      color: #9ca3af;
+      font-size: 0.8rem;
+    }
+    .question-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .flag-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #e5e7eb;
+      cursor: pointer;
+    }
+    .flag-toggle input {
+      width: 14px;
+      height: 14px;
+      accent-color: #fbbf24;
+    }
+    .flag-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #fbbf24;
+      box-shadow: 0 0 10px rgba(251,191,36,0.9);
+    }
+    .nav-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: radial-gradient(circle at top, rgba(15,23,42,1), rgba(15,23,42,0.9));
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 8px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background 120ms ease, box-shadow 120ms ease, transform 80ms ease, border-color 120ms ease;
+    }
+    .btn:hover {
+      border-color: rgba(148, 163, 184, 0.9);
+      box-shadow: 0 10px 30px rgba(15,23,42,0.95);
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 6px 20px rgba(15,23,42,0.85);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0ea5e9, #22c55e);
+      border-color: rgba(56, 189, 248, 0.2);
+      color: #0b1120;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 18px 45px rgba(8,47,73,0.95);
+    }
+    .btn-ghost {
+      border-style: dashed;
+      border-color: rgba(148, 163, 184, 0.7);
+      color: #9ca3af;
+      font-size: 0.8rem;
+    }
+    .btn-danger {
+      background: radial-gradient(circle at top, #ef4444, #b91c1c);
+      border-color: rgba(248, 113, 113, 0.4);
+      color: #f9fafb;
+      font-weight: 600;
+    }
+    .btn-sm {
+      padding: 6px 11px;
+      font-size: 0.8rem;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sidebar-panel {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.95), rgba(15,23,42,0.98));
+      border-radius: var(--radius);
+      border: 1px solid rgba(30, 64, 175, 0.5);
+      padding: 14px 14px 12px;
+      box-shadow: 0 18px 40px rgba(6,21,55,0.9);
+    }
+    .sidebar-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-bottom: 10px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: radial-gradient(circle at top, rgba(15,23,42,0.9), rgba(15,23,42,0.97));
+    }
+    .legend-dot.answered {
+      border-color: rgba(34,197,94,0.95);
+      background: radial-gradient(circle at top, #22c55e, #16a34a);
+      box-shadow: 0 0 12px rgba(34,197,94,0.85);
+    }
+    .legend-dot.flagged {
+      border-color: rgba(251,191,36,0.95);
+      background: radial-gradient(circle at top, #facc15, #f97316);
+      box-shadow: 0 0 12px rgba(251,191,36,0.9);
+    }
+    .question-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(26px, 1fr));
+      gap: 6px;
+      max-height: 260px;
+      overflow: auto;
+      padding: 4px 0 2px;
+    }
+    .q-chip {
+      border-radius: 999px;
+      border: 1px solid rgba(55,65,81,0.95);
+      background: radial-gradient(circle at top, rgba(15,23,42,1), rgba(15,23,42,0.97));
+      font-size: 0.7rem;
+      color: #9ca3af;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease, color 120ms ease, transform 80ms ease;
+    }
+    .q-chip:hover {
+      border-color: rgba(148, 163, 184, 0.9);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.95);
+    }
+    .q-chip.answered {
+      border-color: rgba(34,197,94,0.95);
+      color: #bbf7d0;
+      background: radial-gradient(circle at top, rgba(34,197,94,0.2), rgba(15,23,42,0.98));
+      box-shadow: 0 0 0 1px rgba(22,163,74,0.75);
+    }
+    .q-chip.flagged {
+      border-color: rgba(251,191,36,0.9);
+      color: #fef9c3;
+      background: radial-gradient(circle at top, rgba(251,191,36,0.25), rgba(15,23,42,0.98));
+    }
+    .q-chip.current {
+      border-color: rgba(56,189,248,0.95);
+      color: #e0f2fe;
+      background: radial-gradient(circle at top, rgba(56,189,248,0.35), rgba(15,23,42,0.98));
+      box-shadow: 0 0 0 1px rgba(8,47,73,0.9), 0 0 18px rgba(56,189,248,0.85);
+    }
+    .sidebar-footer {
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .start-screen,
+    .result-screen {
+      text-align: left;
+    }
+    .start-title {
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+      color: #f9fafb;
+    }
+    .start-subtitle {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      margin-bottom: 14px;
+    }
+    .start-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .start-pill {
+      font-size: 0.8rem;
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      color: #e5e7eb;
+      background: rgba(15,23,42,0.85);
+    }
+    .start-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+    .result-main {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .score-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+    @media (max-width: 700px) {
+      .score-card {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .score-pill {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top left, rgba(34,197,94,0.2), rgba(15,23,42,0.98));
+      border: 1px solid rgba(34,197,94,0.8);
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.9), 0 16px 40px rgba(6,95,70,0.9);
+    }
+    .score-pill .label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #bbf7d0;
+    }
+    .score-pill .value {
+      font-variant-numeric: tabular-nums;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #dcfce7;
+    }
+    .score-status {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .score-status strong {
+      color: #e5e7eb;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+    }
+    .stat {
+      padding: 8px 10px;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(31,41,55,0.95);
+      background: radial-gradient(circle at top, rgba(15,23,42,0.95), rgba(15,23,42,0.98));
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    .stat strong {
+      display: block;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+    .review-list {
+      margin-top: 8px;
+      max-height: 260px;
+      overflow: auto;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(31,41,55,0.9);
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.95), rgba(15,23,42,0.98));
+    }
+    .review-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(31,41,55,0.8);
+      font-size: 0.8rem;
+    }
+    .review-item:last-child {
+      border-bottom: none;
+    }
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .review-header span {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    .tag.correct {
+      background: rgba(22,163,74,0.18);
+      border: 1px solid rgba(34,197,94,0.9);
+      color: #bbf7d0;
+    }
+    .tag.incorrect {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(248,113,113,0.95);
+      color: #fecaca;
+    }
+    .review-q {
+      color: #e5e7eb;
+      margin-bottom: 4px;
+    }
+    .review-answer {
+      color: #9ca3af;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-text">
+          <h1>AIF‑C01 Exam Studio</h1>
+          <span>AWS Certified AI Practitioner</span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <span class="pill">60 Questions · 60 Minutes</span>
+        <span class="pill accent">Score / 1000</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="panel-inner">
+          <div id="start-screen" class="start-screen">
+            <div class="panel-header" style="margin-bottom: 12px;">
+              <div class="panel-header-left">
+                <div class="panel-title">Exam Session</div>
+                <div class="panel-subtitle">One‑hour adaptive practice for AWS AIF‑C01</div>
+              </div>
+            </div>
+            <div class="start-title">Train like the real exam.</div>
+            <div class="start-subtitle">
+              When you start, 60 questions are randomized from the latest question pool, the timer begins, and your score is computed out of 1000.
+            </div>
+            <div class="start-grid">
+              <div class="start-pill">✔ Timed: 60 minutes</div>
+              <div class="start-pill">✔ Random questions</div>
+              <div class="start-pill">✔ Review with explanations</div>
+            </div>
+            <div class="start-actions">
+              <button class="btn btn-primary" id="start-btn">Start Exam</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="demo-btn">Try 5‑question demo</button>
+            </div>
+            <p class="hint">In this first version, the question pool is a small built‑in demo. Later, connect it to your full Notion question bank.</p>
+          </div>
+
+          <div id="exam-screen" class="hidden">
+            <div class="panel-header">
+              <div class="panel-header-left">
+                <div class="panel-title">Live Exam</div>
+                <div class="panel-subtitle" id="panel-subtitle"></div>
+              </div>
+              <div class="timer" id="timer">
+                <div class="timer-dot" id="timer-dot"></div>
+                <div class="timer-label">Time left</div>
+                <div class="timer-value" id="timer-value">60:00</div>
+              </div>
+            </div>
+
+            <div class="question-number-row">
+              <div class="question-index" id="question-index"></div>
+              <div class="question-badge" id="question-badge">Practice session</div>
+            </div>
+            <div class="question-text" id="question-text"></div>
+            <div class="options" id="options"></div>
+
+            <div class="question-footer">
+              <label class="flag-toggle">
+                <input type="checkbox" id="flag-checkbox" />
+                <span class="flag-dot"></span>
+                <span>Flag for review</span>
+              </label>
+              <div class="nav-buttons">
+                <button class="btn btn-sm" type="button" id="prev-btn">Previous</button>
+                <button class="btn btn-sm" type="button" id="next-btn">Next</button>
+                <button class="btn btn-danger btn-sm" type="button" id="finish-btn">Finish exam</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="result-screen" class="result-screen hidden">
+            <div class="panel-header" style="margin-bottom: 12px;">
+              <div class="panel-header-left">
+                <div class="panel-title">Session Results</div>
+                <div class="panel-subtitle">Performance summary and question‑by‑question review</div>
+              </div>
+            </div>
+            <div class="result-main">
+              <div class="score-card">
+                <div>
+                  <div class="score-pill">
+                    <span class="label">Score</span>
+                    <span class="value" id="score-value">000 / 1000</span>
+                  </div>
+                  <p class="score-status" id="score-status"></p>
+                </div>
+                <div class="stats-grid">
+                  <div class="stat"><strong id="stat-correct">0</strong>Correct</div>
+                  <div class="stat"><strong id="stat-incorrect">0</strong>Incorrect</div>
+                  <div class="stat"><strong id="stat-unanswered">0</strong>Unanswered</div>
+                </div>
+              </div>
+              <div class="start-actions" style="margin-top: 6px;">
+                <button class="btn btn-primary btn-sm" type="button" id="retake-btn">Retake exam</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="return-start-btn">Back to start</button>
+              </div>
+              <p class="hint">Scroll the review list to inspect each question, your answer, the correct answer, and explanation.</p>
+              <div class="review-list" id="review-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="sidebar-panel">
+          <div class="sidebar-title">Question Map</div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot"></span>Unanswered</span>
+            <span class="legend-item"><span class="legend-dot answered"></span>Answered</span>
+            <span class="legend-item"><span class="legend-dot flagged"></span>Flagged</span>
+          </div>
+          <div class="question-grid" id="question-grid"></div>
+          <div class="sidebar-footer">
+            <span id="sidebar-progress">0 / 0 answered</span>
+            <button class="btn btn-ghost btn-sm" type="button" id="quick-finish-btn">Submit</button>
+          </div>
+        </div>
+        <div class="sidebar-panel">
+          <div class="sidebar-title">Session Notes</div>
+          <p style="font-size:0.78rem;color:#9ca3af;margin:0 0 6px;">This is a demo build: 5 internal questions only. Once your bank is ready, replace the internal array with a <code>questions.json</code> fetch and deploy again.</p>
+          <p style="font-size:0.78rem;color:#6b7280;margin:0;">Tip: aim for consistency across sessions. Re‑running the same exam seed regularly helps track your progress.</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const DEMO_QUESTIONS = [
+      {
+        id: 1,
+        text: "Which AWS service is most appropriate for enterprise search over large volumes of documents?",
+        options: {
+          A: "Amazon Textract",
+          B: "Amazon Comprehend",
+          C: "Amazon Kendra",
+          D: "Amazon Personalize"
+        },
+        answer: "C",
+        explanation: "Amazon Kendra is designed for intelligent enterprise search across large collections of documents."
+      },
+      {
+        id: 2,
+        text: "A company wants to detect abnormal patterns in sensor data but has no labels. Which approach is most suitable?",
+        options: {
+          A: "Linear regression",
+          B: "Classification",
+          C: "Decision trees",
+          D: "Autoencoders"
+        },
+        answer: "D",
+        explanation: "Autoencoders work well for anomaly detection in an unsupervised setting when labels are not available."
+      },
+      {
+        id: 3,
+        text: "Which metric best balances precision and recall on an imbalanced dataset?",
+        options: {
+          A: "Accuracy",
+          B: "Precision",
+          C: "Recall",
+          D: "F1 score"
+        },
+        answer: "D",
+        explanation: "The F1 score is the harmonic mean of precision and recall, useful on imbalanced datasets."
+      },
+      {
+        id: 4,
+        text: "A team wants to document an ML model's decision‑making process for regulatory audits. Which AWS feature helps?",
+        options: {
+          A: "Amazon Textract",
+          B: "Amazon SageMaker Model Card",
+          C: "AWS CloudFormation",
+          D: "Amazon Comprehend"
+        },
+        answer: "B",
+        explanation: "SageMaker Model Cards help document models, including decision‑making and compliance details."
+      },
+      {
+        id: 5,
+        text: "What does inference mean in the context of AI?",
+        options: {
+          A: "Creating new AI algorithms",
+          B: "Using a trained model to make predictions on new data",
+          C: "Combining multiple AI models",
+          D: "Collecting training data"
+        },
+        answer: "B",
+        explanation: "Inference is the process of applying a trained model to unseen data to generate predictions."
+      }
+    ];
+
+    let questions = [];
+    let answers = [];
+    let currentIndex = 0;
+    let timerId = null;
+    let timeLeft = 0;
+    let totalQuestions = 0;
+
+    const startScreen = document.getElementById('start-screen');
+    const examScreen = document.getElementById('exam-screen');
+    const resultScreen = document.getElementById('result-screen');
+
+    const questionIndexEl = document.getElementById('question-index');
+    const questionTextEl = document.getElementById('question-text');
+    const optionsEl = document.getElementById('options');
+    const flagCheckbox = document.getElementById('flag-checkbox');
+
+    const timerValueEl = document.getElementById('timer-value');
+    const timerDotEl = document.getElementById('timer-dot');
+    const panelSubtitleEl = document.getElementById('panel-subtitle');
+
+    const questionGridEl = document.getElementById('question-grid');
+    const sidebarProgressEl = document.getElementById('sidebar-progress');
+
+    const scoreValueEl = document.getElementById('score-value');
+    const scoreStatusEl = document.getElementById('score-status');
+    const statCorrectEl = document.getElementById('stat-correct');
+    const statIncorrectEl = document.getElementById('stat-incorrect');
+    const statUnansweredEl = document.getElementById('stat-unanswered');
+    const reviewListEl = document.getElementById('review-list');
+
+    const startBtn = document.getElementById('start-btn');
+    const demoBtn = document.getElementById('demo-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const finishBtn = document.getElementById('finish-btn');
+    const quickFinishBtn = document.getElementById('quick-finish-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+    const returnStartBtn = document.getElementById('return-start-btn');
+
+    function shuffle(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function initExam({ timed = true } = {}) {
+      questions = shuffle(DEMO_QUESTIONS);
+      totalQuestions = questions.length;
+      answers = questions.map(q => ({ selected: null, flagged: false }));
+      currentIndex = 0;
+
+      startScreen.classList.add('hidden');
+      resultScreen.classList.add('hidden');
+      examScreen.classList.remove('hidden');
+
+      panelSubtitleEl.textContent = timed ? 'Timed demo · 5 questions · 60 min in full version' : 'Untimed demo · 5 questions';
+
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+
+      if (timed) {
+        timeLeft = 60 * 60;
+        updateTimerDisplay();
+        timerId = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            timeLeft = 0;
+            updateTimerDisplay();
+            clearInterval(timerId);
+            timerId = null;
+            finishExam(true);
+          } else {
+            updateTimerDisplay();
+          }
+        }, 1000);
+      } else {
+        timeLeft = 0;
+        timerValueEl.textContent = '—';
+        timerDotEl.style.background = '#6b7280';
+        timerDotEl.style.boxShadow = 'none';
+      }
+
+      renderQuestion();
+      renderQuestionGrid();
+      updateSidebarProgress();
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      timerValueEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      if (timeLeft <= 5 * 60) {
+        timerDotEl.style.background = '#f97373';
+        timerDotEl.style.boxShadow = '0 0 12px rgba(248,113,113,0.9)';
+      } else {
+        timerDotEl.style.background = '#22c55e';
+        timerDotEl.style.boxShadow = '0 0 10px rgba(34,197,94,0.9)';
+      }
+    }
+
+    function renderQuestion() {
+      const q = questions[currentIndex];
+      const state = answers[currentIndex];
+
+      questionIndexEl.textContent = `Question ${currentIndex + 1} of ${totalQuestions}`;
+      questionTextEl.textContent = q.text;
+
+      flagCheckbox.checked = state.flagged;
+
+      optionsEl.innerHTML = '';
+      Object.entries(q.options).forEach(([key, label]) => {
+        const wrapper = document.createElement('label');
+        wrapper.className = 'option' + (state.selected === key ? ' selected' : '');
+
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'option';
+        input.value = key;
+        input.checked = state.selected === key;
+        input.addEventListener('change', () => {
+          answers[currentIndex].selected = key;
+          renderQuestion();
+          renderQuestionGrid();
+          updateSidebarProgress();
+        });
+
+        const keySpan = document.createElement('span');
+        keySpan.className = 'option-key';
+        keySpan.textContent = key;
+
+        const labelSpan = document.createElement('div');
+        labelSpan.className = 'option-label';
+        labelSpan.textContent = label;
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(keySpan);
+        wrapper.appendChild(labelSpan);
+        optionsEl.appendChild(wrapper);
+      });
+    }
+
+    function renderQuestionGrid() {
+      questionGridEl.innerHTML = '';
+      answers.forEach((state, idx) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'q-chip';
+        if (state.selected) chip.classList.add('answered');
+        if (state.flagged) chip.classList.add('flagged');
+        if (idx === currentIndex) chip.classList.add('current');
+        chip.textContent = idx + 1;
+        chip.addEventListener('click', () => {
+          currentIndex = idx;
+          renderQuestion();
+          renderQuestionGrid();
+        });
+        questionGridEl.appendChild(chip);
+      });
+    }
+
+    function updateSidebarProgress() {
+      const answeredCount = answers.filter(a => a.selected !== null).length;
+      sidebarProgressEl.textContent = `${answeredCount} / ${totalQuestions} answered`;
+    }
+
+    function goPrev() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+        renderQuestionGrid();
+      }
+    }
+
+    function goNext() {
+      if (currentIndex < totalQuestions - 1) {
+        currentIndex++;
+        renderQuestion();
+        renderQuestionGrid();
+      }
+    }
+
+    function finishExam(auto = false) {
+      if (!auto) {
+        const unansweredCount = answers.filter(a => a.selected === null).length;
+        const confirmMsg = unansweredCount > 0
+          ? `You still have ${unansweredCount} unanswered question(s). Submit anyway?`
+          : 'Submit your answers and see your score?';
+        if (!window.confirm(confirmMsg)) return;
+      }
+
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+
+      const correctCount = answers.reduce((acc, a, idx) => {
+        return acc + (a.selected === questions[idx].answer ? 1 : 0);
+      }, 0);
+      const unansweredCount = answers.filter(a => a.selected === null).length;
+      const incorrectCount = totalQuestions - correctCount - unansweredCount;
+
+      const score = Math.round((correctCount / totalQuestions) * 1000);
+
+      scoreValueEl.textContent = `${score.toString().padStart(3, '0')} / 1000`;
+      const passed = score >= 700;
+      scoreStatusEl.innerHTML = passed
+        ? '<strong>Pass‑ready trajectory.</strong> Keep reinforcing weak areas and domain weights.'
+        : '<strong>Below pass threshold.</strong> Use the review to focus on missed concepts.';
+
+      statCorrectEl.textContent = correctCount;
+      statIncorrectEl.textContent = incorrectCount;
+      statUnansweredEl.textContent = unansweredCount;
+
+      buildReviewList();
+
+      examScreen.classList.add('hidden');
+      resultScreen.classList.remove('hidden');
+    }
+
+    function buildReviewList() {
+      reviewListEl.innerHTML = '';
+      questions.forEach((q, idx) => {
+        const state = answers[idx];
+        const isCorrect = state.selected === q.answer;
+        const container = document.createElement('div');
+        container.className = 'review-item';
+
+        const header = document.createElement('div');
+        header.className = 'review-header';
+        const left = document.createElement('span');
+        left.textContent = `Q${idx + 1}`;
+        const right = document.createElement('span');
+        const tag = document.createElement('span');
+        tag.className = 'tag ' + (isCorrect ? 'correct' : 'incorrect');
+        tag.textContent = isCorrect ? 'Correct' : 'Incorrect';
+        right.appendChild(tag);
+        header.appendChild(left);
+        header.appendChild(right);
+
+        const qText = document.createElement('div');
+        qText.className = 'review-q';
+        qText.textContent = q.text;
+
+        const ansText = document.createElement('div');
+        ansText.className = 'review-answer';
+        const selectedLabel = state.selected ? `${state.selected}: ${q.options[state.selected]}` : 'No answer';
+        const correctLabel = `${q.answer}: ${q.options[q.answer]}`;
+        ansText.innerHTML = `<strong>Your answer:</strong> ${selectedLabel}<br><strong>Correct:</strong> ${correctLabel}<br><strong>Why:</strong> ${q.explanation}`;
+
+        container.appendChild(header);
+        container.appendChild(qText);
+        container.appendChild(ansText);
+        reviewListEl.appendChild(container);
+      });
+    }
+
+    flagCheckbox.addEventListener('change', () => {
+      answers[currentIndex].flagged = flagCheckbox.checked;
+      renderQuestionGrid();
+    });
+
+    prevBtn.addEventListener('click', goPrev);
+    nextBtn.addEventListener('click', goNext);
+    finishBtn.addEventListener('click', () => finishExam(false));
+    quickFinishBtn.addEventListener('click', () => finishExam(false));
+
+    startBtn.addEventListener('click', () => initExam({ timed: true }));
+    demoBtn.addEventListener('click', () => initExam({ timed: false }));
+
+    retakeBtn.addEventListener('click', () => initExam({ timed: true }));
+    returnStartBtn.addEventListener('click', () => {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+      examScreen.classList.add('hidden');
+      resultScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
