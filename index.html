@@ -530,6 +530,7 @@
         grid-template-columns: minmax(0, 1fr);
       }
     }
+    /* Score pill — green by default (pass), overridden to red on fail */
     .score-pill {
       display: inline-flex;
       align-items: baseline;
@@ -540,17 +541,28 @@
       border: 1px solid rgba(34,197,94,0.8);
       box-shadow: 0 0 0 1px rgba(15,23,42,0.9), 0 16px 40px rgba(6,95,70,0.9);
     }
+    .score-pill.fail {
+      background: radial-gradient(circle at top left, rgba(239,68,68,0.2), rgba(15,23,42,0.98));
+      border: 1px solid rgba(248,113,113,0.8);
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.9), 0 16px 40px rgba(127,29,29,0.9);
+    }
     .score-pill .label {
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.16em;
       color: #bbf7d0;
     }
+    .score-pill.fail .label {
+      color: #fecaca;
+    }
     .score-pill .value {
       font-variant-numeric: tabular-nums;
       font-size: 1.5rem;
       font-weight: 700;
       color: #dcfce7;
+    }
+    .score-pill.fail .value {
+      color: #fee2e2;
     }
     .score-status {
       font-size: 0.85rem;
@@ -641,12 +653,12 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"></div>
         <div class="brand-text">
-          <h1>AIF‑C01 Exam Studio</h1>
+          <h1>AIF&#8209;C01 Exam Studio</h1>
           <span>AWS Certified AI Practitioner</span>
         </div>
       </div>
       <div class="header-meta">
-        <span class="pill" id="header-pill-count">Loading…</span>
+        <span class="pill" id="header-pill-count">Loading&#8230;</span>
         <span class="pill accent">Score / 1000</span>
       </div>
     </header>
@@ -658,7 +670,7 @@
             <div class="panel-header" style="margin-bottom: 12px;">
               <div class="panel-header-left">
                 <div class="panel-title">Exam Session</div>
-                <div class="panel-subtitle">One‑hour adaptive practice for AWS AIF‑C01</div>
+                <div class="panel-subtitle">One&#8209;hour adaptive practice for AWS AIF&#8209;C01</div>
               </div>
             </div>
             <div class="start-title">Train like the real exam.</div>
@@ -666,14 +678,14 @@
               When you start, 60 questions are randomized from the full question pool, the timer begins, and your score is computed out of 1000.
             </div>
             <div class="start-grid">
-              <div class="start-pill">✔ Timed: 60 minutes</div>
-              <div class="start-pill">✔ Random questions</div>
-              <div class="start-pill">✔ Review with explanations</div>
+              <div class="start-pill">&#10004; Timed: 60 minutes</div>
+              <div class="start-pill">&#10004; Random questions</div>
+              <div class="start-pill">&#10004; Review with explanations</div>
             </div>
-            <div id="loading-msg" class="loading-msg">⏳ Loading question bank…</div>
+            <div id="loading-msg" class="loading-msg">&#9203; Loading question bank&#8230;</div>
             <div class="start-actions hidden" id="start-actions">
               <button class="btn btn-primary" id="start-btn">Start Exam (60 Q)</button>
-              <button class="btn btn-ghost btn-sm" type="button" id="demo-btn">Try 5‑question demo</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="demo-btn">Try 5&#8209;question demo</button>
             </div>
             <p class="hint" id="start-hint"></p>
           </div>
@@ -716,13 +728,13 @@
             <div class="panel-header" style="margin-bottom: 12px;">
               <div class="panel-header-left">
                 <div class="panel-title">Session Results</div>
-                <div class="panel-subtitle">Performance summary and question‑by‑question review</div>
+                <div class="panel-subtitle">Performance summary and question&#8209;by&#8209;question review</div>
               </div>
             </div>
             <div class="result-main">
               <div class="score-card">
                 <div>
-                  <div class="score-pill">
+                  <div class="score-pill" id="score-pill">
                     <span class="label">Score</span>
                     <span class="value" id="score-value">000 / 1000</span>
                   </div>
@@ -761,8 +773,8 @@
         </div>
         <div class="sidebar-panel">
           <div class="sidebar-title">Question Bank</div>
-          <p id="bank-info" style="font-size:0.78rem;color:#9ca3af;margin:0 0 6px;">Loading…</p>
-          <p style="font-size:0.78rem;color:#6b7280;margin:0;">Tip: aim for consistency across sessions. Re‑running the same exam seed regularly helps track your progress.</p>
+          <p id="bank-info" style="font-size:0.78rem;color:#9ca3af;margin:0 0 6px;">Loading&#8230;</p>
+          <p style="font-size:0.78rem;color:#6b7280;margin:0;">Tip: aim for consistency across sessions. Re&#8209;running the same exam seed regularly helps track your progress.</p>
         </div>
       </aside>
     </main>
@@ -794,10 +806,10 @@
       },
       {
         id: "D4",
-        text: "A team wants to document an ML model's decision‑making process for regulatory audits. Which AWS feature helps?",
+        text: "A team wants to document an ML model's decision&#8209;making process for regulatory audits. Which AWS feature helps?",
         options: { A: "Amazon Textract", B: "Amazon SageMaker Model Card", C: "AWS CloudFormation", D: "Amazon Comprehend" },
         answer: "B",
-        explanation: "SageMaker Model Cards help document models, including decision‑making and compliance details."
+        explanation: "SageMaker Model Cards help document models, including decision&#8209;making and compliance details."
       },
       {
         id: "D5",
@@ -841,6 +853,7 @@
     const panelSubtitleEl   = document.getElementById('panel-subtitle');
     const questionGridEl    = document.getElementById('question-grid');
     const sidebarProgressEl = document.getElementById('sidebar-progress');
+    const scorePillEl       = document.getElementById('score-pill');
     const scoreValueEl      = document.getElementById('score-value');
     const scoreStatusEl     = document.getElementById('score-status');
     const statCorrectEl     = document.getElementById('stat-correct');
@@ -869,11 +882,9 @@
     }
 
     // ─── Load questions.json ──────────────────────────────────────────────────
-    // Use absolute path so it works correctly on Cloudflare Pages and any subdirectory.
     fetch('/questions.json', { cache: 'no-cache' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        // Guard against Cloudflare returning an HTML error page with a 200 status
         const ct = r.headers.get('content-type') || '';
         if (!ct.includes('application/json') && !ct.includes('text/plain') && !ct.includes('octet-stream')) {
           throw new Error(`Unexpected content-type: ${ct}`);
@@ -886,7 +897,7 @@
         const n = FULL_BANK.length;
         loadingMsg.classList.add('hidden');
         startActions.classList.remove('hidden');
-        headerPill.textContent = `${Math.min(60, n)} Questions · 60 Minutes`;
+        headerPill.textContent = `${Math.min(60, n)} Questions \u00b7 60 Minutes`;
         bankInfo.textContent = `${n} questions loaded from questions.json.`;
         startHint.textContent = `Full bank: ${n} questions. Each exam draws 60 at random.`;
         startBtn.textContent = `Start Exam (${Math.min(60, n)} Q)`;
@@ -896,8 +907,8 @@
         FULL_BANK = DEMO_QUESTIONS.slice();
         loadingMsg.classList.add('hidden');
         startActions.classList.remove('hidden');
-        headerPill.textContent = '5 Questions · Demo';
-        bankInfo.textContent = 'Demo mode — questions.json could not be loaded.';
+        headerPill.textContent = '5 Questions \u00b7 Demo';
+        bankInfo.textContent = 'Demo mode \u2014 questions.json could not be loaded.';
         startHint.textContent = '';
         startBtn.textContent = 'Start Demo Exam';
       });
@@ -925,8 +936,8 @@
       examScreen.classList.remove('hidden');
 
       panelSubtitleEl.textContent = timed
-        ? `Timed · ${totalQuestions} questions · 60 min`
-        : `Untimed demo · ${totalQuestions} questions`;
+        ? `Timed \u00b7 ${totalQuestions} questions \u00b7 60 min`
+        : `Untimed demo \u00b7 ${totalQuestions} questions`;
 
       if (timerId) { clearInterval(timerId); timerId = null; }
 
@@ -947,7 +958,7 @@
         }, 1000);
       } else {
         timeLeft = 0;
-        timerValueEl.textContent = '—';
+        timerValueEl.textContent = '\u2014';
         timerDotEl.style.background = '#6b7280';
         timerDotEl.style.boxShadow = 'none';
       }
@@ -1048,12 +1059,15 @@
       const score = Math.round((correct / totalQuestions) * 1000);
       const passed = score >= 700;
 
+      // Apply pass/fail colour to the score pill
+      scorePillEl.classList.toggle('fail', !passed);
+
       scoreValueEl.textContent = `${score} / 1000`;
       scoreStatusEl.innerHTML = passed
-        ? `<strong>PASS</strong> — ${correct} correct out of ${totalQuestions}`
-        : `<strong>FAIL</strong> — ${correct} correct out of ${totalQuestions} (need 700)`;
-      statCorrectEl.textContent   = correct;
-      statIncorrectEl.textContent = incorrect;
+        ? `<strong>PASS</strong> \u2014 ${correct} correct out of ${totalQuestions}`
+        : `<strong>FAIL</strong> \u2014 ${correct} correct out of ${totalQuestions} (need 700)`;
+      statCorrectEl.textContent    = correct;
+      statIncorrectEl.textContent  = incorrect;
       statUnansweredEl.textContent = unanswered;
 
       reviewListEl.innerHTML = '';
@@ -1064,13 +1078,13 @@
         item.className = 'review-item';
         item.innerHTML = `
           <div class="review-header">
-            <span>Q${i + 1}${q.domain ? ' · ' + q.domain.toUpperCase() : ''}</span>
-            <span class="tag ${sel ? (isCorrect ? 'correct' : 'incorrect') : 'incorrect'}">${sel ? (isCorrect ? 'Correct' : 'Incorrect') : 'Unanswered'}</span>
+            <span>Q${i + 1}</span>
+            <span class="tag ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Correct' : (sel ? 'Incorrect' : 'Unanswered')}</span>
           </div>
           <div class="review-q">${q.text}</div>
           <div class="review-answer">
-            Your answer: <strong>${sel || '—'}</strong> &nbsp;·&nbsp; Correct: <strong>${q.answer}</strong><br/>
-            <span style="color:#6b7280">${q.explanation}</span>
+            Your answer: <strong>${sel ?? '\u2014'}</strong> \u00b7 Correct: <strong>${q.answer}</strong>
+            ${q.explanation ? `<br><em style="color:#6b7280;">${q.explanation}</em>` : ''}
           </div>`;
         reviewListEl.appendChild(item);
       });
@@ -1084,11 +1098,21 @@
     demoBtn.addEventListener('click',  () => initExam({ timed: false, pool: DEMO_QUESTIONS }));
 
     prevBtn.addEventListener('click', () => {
-      if (currentIndex > 0) { currentIndex--; renderQuestion(); renderQuestionGrid(); }
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+        renderQuestionGrid();
+      }
     });
+
     nextBtn.addEventListener('click', () => {
-      if (currentIndex < totalQuestions - 1) { currentIndex++; renderQuestion(); renderQuestionGrid(); }
+      if (currentIndex < totalQuestions - 1) {
+        currentIndex++;
+        renderQuestion();
+        renderQuestionGrid();
+      }
     });
+
     finishBtn.addEventListener('click',      () => finishExam());
     quickFinishBtn.addEventListener('click', () => finishExam());
 
@@ -1100,7 +1124,9 @@
     retakeBtn.addEventListener('click', () => {
       resultScreen.classList.add('hidden');
       startScreen.classList.remove('hidden');
+      initExam({ timed: true });
     });
+
     returnStartBtn.addEventListener('click', () => {
       resultScreen.classList.add('hidden');
       startScreen.classList.remove('hidden');
