@@ -627,6 +627,11 @@
     .review-answer {
       color: #9ca3af;
     }
+    .loading-msg {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      padding: 12px 0;
+    }
     .hidden { display: none; }
   </style>
 </head>
@@ -641,7 +646,7 @@
         </div>
       </div>
       <div class="header-meta">
-        <span class="pill">60 Questions · 60 Minutes</span>
+        <span class="pill" id="header-pill-count">Loading…</span>
         <span class="pill accent">Score / 1000</span>
       </div>
     </header>
@@ -658,18 +663,19 @@
             </div>
             <div class="start-title">Train like the real exam.</div>
             <div class="start-subtitle">
-              When you start, 60 questions are randomized from the latest question pool, the timer begins, and your score is computed out of 1000.
+              When you start, 60 questions are randomized from the full question pool, the timer begins, and your score is computed out of 1000.
             </div>
             <div class="start-grid">
               <div class="start-pill">✔ Timed: 60 minutes</div>
               <div class="start-pill">✔ Random questions</div>
               <div class="start-pill">✔ Review with explanations</div>
             </div>
-            <div class="start-actions">
-              <button class="btn btn-primary" id="start-btn">Start Exam</button>
+            <div id="loading-msg" class="loading-msg">⏳ Loading question bank…</div>
+            <div class="start-actions hidden" id="start-actions">
+              <button class="btn btn-primary" id="start-btn">Start Exam (60 Q)</button>
               <button class="btn btn-ghost btn-sm" type="button" id="demo-btn">Try 5‑question demo</button>
             </div>
-            <p class="hint">In this first version, the question pool is a small built‑in demo. Later, connect it to your full Notion question bank.</p>
+            <p class="hint" id="start-hint"></p>
           </div>
 
           <div id="exam-screen" class="hidden">
@@ -754,8 +760,8 @@
           </div>
         </div>
         <div class="sidebar-panel">
-          <div class="sidebar-title">Session Notes</div>
-          <p style="font-size:0.78rem;color:#9ca3af;margin:0 0 6px;">This is a demo build: 5 internal questions only. Once your bank is ready, replace the internal array with a <code>questions.json</code> fetch and deploy again.</p>
+          <div class="sidebar-title">Question Bank</div>
+          <p id="bank-info" style="font-size:0.78rem;color:#9ca3af;margin:0 0 6px;">Loading…</p>
           <p style="font-size:0.78rem;color:#6b7280;margin:0;">Tip: aim for consistency across sessions. Re‑running the same exam seed regularly helps track your progress.</p>
         </div>
       </aside>
@@ -763,57 +769,38 @@
   </div>
 
   <script>
+    // ─── Fallback demo pool (used if questions.json fails to load) ───────────
     const DEMO_QUESTIONS = [
       {
-        id: 1,
+        id: "D1",
         text: "Which AWS service is most appropriate for enterprise search over large volumes of documents?",
-        options: {
-          A: "Amazon Textract",
-          B: "Amazon Comprehend",
-          C: "Amazon Kendra",
-          D: "Amazon Personalize"
-        },
+        options: { A: "Amazon Textract", B: "Amazon Comprehend", C: "Amazon Kendra", D: "Amazon Personalize" },
         answer: "C",
         explanation: "Amazon Kendra is designed for intelligent enterprise search across large collections of documents."
       },
       {
-        id: 2,
+        id: "D2",
         text: "A company wants to detect abnormal patterns in sensor data but has no labels. Which approach is most suitable?",
-        options: {
-          A: "Linear regression",
-          B: "Classification",
-          C: "Decision trees",
-          D: "Autoencoders"
-        },
+        options: { A: "Linear regression", B: "Classification", C: "Decision trees", D: "Autoencoders" },
         answer: "D",
         explanation: "Autoencoders work well for anomaly detection in an unsupervised setting when labels are not available."
       },
       {
-        id: 3,
+        id: "D3",
         text: "Which metric best balances precision and recall on an imbalanced dataset?",
-        options: {
-          A: "Accuracy",
-          B: "Precision",
-          C: "Recall",
-          D: "F1 score"
-        },
+        options: { A: "Accuracy", B: "Precision", C: "Recall", D: "F1 score" },
         answer: "D",
         explanation: "The F1 score is the harmonic mean of precision and recall, useful on imbalanced datasets."
       },
       {
-        id: 4,
+        id: "D4",
         text: "A team wants to document an ML model's decision‑making process for regulatory audits. Which AWS feature helps?",
-        options: {
-          A: "Amazon Textract",
-          B: "Amazon SageMaker Model Card",
-          C: "AWS CloudFormation",
-          D: "Amazon Comprehend"
-        },
+        options: { A: "Amazon Textract", B: "Amazon SageMaker Model Card", C: "AWS CloudFormation", D: "Amazon Comprehend" },
         answer: "B",
         explanation: "SageMaker Model Cards help document models, including decision‑making and compliance details."
       },
       {
-        id: 5,
+        id: "D5",
         text: "What does inference mean in the context of AI?",
         options: {
           A: "Creating new AI algorithms",
@@ -826,6 +813,8 @@
       }
     ];
 
+    // ─── State ────────────────────────────────────────────────────────────────
+    let FULL_BANK = [];   // loaded from questions.json
     let questions = [];
     let answers = [];
     let currentIndex = 0;
@@ -833,38 +822,80 @@
     let timeLeft = 0;
     let totalQuestions = 0;
 
-    const startScreen = document.getElementById('start-screen');
-    const examScreen = document.getElementById('exam-screen');
-    const resultScreen = document.getElementById('result-screen');
+    // ─── DOM refs ─────────────────────────────────────────────────────────────
+    const startScreen    = document.getElementById('start-screen');
+    const examScreen     = document.getElementById('exam-screen');
+    const resultScreen   = document.getElementById('result-screen');
+    const startActions   = document.getElementById('start-actions');
+    const loadingMsg     = document.getElementById('loading-msg');
+    const startHint      = document.getElementById('start-hint');
+    const bankInfo       = document.getElementById('bank-info');
+    const headerPill     = document.getElementById('header-pill-count');
 
-    const questionIndexEl = document.getElementById('question-index');
-    const questionTextEl = document.getElementById('question-text');
-    const optionsEl = document.getElementById('options');
-    const flagCheckbox = document.getElementById('flag-checkbox');
-
-    const timerValueEl = document.getElementById('timer-value');
-    const timerDotEl = document.getElementById('timer-dot');
-    const panelSubtitleEl = document.getElementById('panel-subtitle');
-
-    const questionGridEl = document.getElementById('question-grid');
+    const questionIndexEl  = document.getElementById('question-index');
+    const questionTextEl   = document.getElementById('question-text');
+    const optionsEl        = document.getElementById('options');
+    const flagCheckbox     = document.getElementById('flag-checkbox');
+    const timerValueEl     = document.getElementById('timer-value');
+    const timerDotEl       = document.getElementById('timer-dot');
+    const panelSubtitleEl  = document.getElementById('panel-subtitle');
+    const questionGridEl   = document.getElementById('question-grid');
     const sidebarProgressEl = document.getElementById('sidebar-progress');
-
-    const scoreValueEl = document.getElementById('score-value');
-    const scoreStatusEl = document.getElementById('score-status');
-    const statCorrectEl = document.getElementById('stat-correct');
-    const statIncorrectEl = document.getElementById('stat-incorrect');
+    const scoreValueEl     = document.getElementById('score-value');
+    const scoreStatusEl    = document.getElementById('score-status');
+    const statCorrectEl    = document.getElementById('stat-correct');
+    const statIncorrectEl  = document.getElementById('stat-incorrect');
     const statUnansweredEl = document.getElementById('stat-unanswered');
-    const reviewListEl = document.getElementById('review-list');
+    const reviewListEl     = document.getElementById('review-list');
+    const startBtn         = document.getElementById('start-btn');
+    const demoBtn          = document.getElementById('demo-btn');
+    const prevBtn          = document.getElementById('prev-btn');
+    const nextBtn          = document.getElementById('next-btn');
+    const finishBtn        = document.getElementById('finish-btn');
+    const quickFinishBtn   = document.getElementById('quick-finish-btn');
+    const retakeBtn        = document.getElementById('retake-btn');
+    const returnStartBtn   = document.getElementById('return-start-btn');
 
-    const startBtn = document.getElementById('start-btn');
-    const demoBtn = document.getElementById('demo-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const finishBtn = document.getElementById('finish-btn');
-    const quickFinishBtn = document.getElementById('quick-finish-btn');
-    const retakeBtn = document.getElementById('retake-btn');
-    const returnStartBtn = document.getElementById('return-start-btn');
+    // ─── Load questions.json ──────────────────────────────────────────────────
+    // Normalises each entry so JS always sees { id, text, options, answer, explanation }
+    function normalise(q) {
+      return {
+        id:          q.id          ?? q.id,
+        text:        q.text        ?? q.question ?? '',   // JSON uses "question", fallback to "text"
+        options:     q.options     ?? {},
+        answer:      q.answer      ?? '',
+        explanation: q.explanation ?? '',
+        domain:      q.domain      ?? ''
+      };
+    }
 
+    fetch('questions.json')
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        FULL_BANK = data.map(normalise);
+        const n = FULL_BANK.length;
+        loadingMsg.classList.add('hidden');
+        startActions.classList.remove('hidden');
+        headerPill.textContent = `${Math.min(60, n)} Questions · 60 Minutes`;
+        bankInfo.textContent = `${n} questions loaded from questions.json.`;
+        startHint.textContent = `Full bank: ${n} questions. Each exam draws 60 at random.`;
+        startBtn.textContent = `Start Exam (${Math.min(60, n)} Q)`;
+      })
+      .catch(err => {
+        console.warn('questions.json not found or invalid, using demo pool.', err);
+        FULL_BANK = DEMO_QUESTIONS.slice();
+        loadingMsg.classList.add('hidden');
+        startActions.classList.remove('hidden');
+        headerPill.textContent = '5 Questions · Demo';
+        bankInfo.textContent = 'Demo mode — questions.json could not be loaded.';
+        startHint.textContent = 'questions.json not found. Running 5-question demo instead.';
+        startBtn.textContent = 'Start Demo Exam';
+      });
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
     function shuffle(array) {
       const arr = array.slice();
       for (let i = arr.length - 1; i > 0; i--) {
@@ -874,22 +905,23 @@
       return arr;
     }
 
-    function initExam({ timed = true } = {}) {
-      questions = shuffle(DEMO_QUESTIONS);
+    // ─── Exam init ────────────────────────────────────────────────────────────
+    function initExam({ timed = true, pool = null } = {}) {
+      const source = pool ?? FULL_BANK;
+      questions = shuffle(source).slice(0, 60);
       totalQuestions = questions.length;
-      answers = questions.map(q => ({ selected: null, flagged: false }));
+      answers = questions.map(() => ({ selected: null, flagged: false }));
       currentIndex = 0;
 
       startScreen.classList.add('hidden');
       resultScreen.classList.add('hidden');
       examScreen.classList.remove('hidden');
 
-      panelSubtitleEl.textContent = timed ? 'Timed demo · 5 questions · 60 min in full version' : 'Untimed demo · 5 questions';
+      panelSubtitleEl.textContent = timed
+        ? `Timed · ${totalQuestions} questions · 60 min`
+        : `Untimed demo · ${totalQuestions} questions`;
 
-      if (timerId) {
-        clearInterval(timerId);
-        timerId = null;
-      }
+      if (timerId) { clearInterval(timerId); timerId = null; }
 
       if (timed) {
         timeLeft = 60 * 60;
@@ -921,7 +953,7 @@
     function updateTimerDisplay() {
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
-      timerValueEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      timerValueEl.textContent = `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
       if (timeLeft <= 5 * 60) {
         timerDotEl.style.background = '#f97373';
         timerDotEl.style.boxShadow = '0 0 12px rgba(248,113,113,0.9)';
@@ -936,8 +968,7 @@
       const state = answers[currentIndex];
 
       questionIndexEl.textContent = `Question ${currentIndex + 1} of ${totalQuestions}`;
-      questionTextEl.textContent = q.text;
-
+      questionTextEl.textContent = q.text;   // always normalised to .text
       flagCheckbox.checked = state.flagged;
 
       optionsEl.innerHTML = '';
@@ -979,7 +1010,7 @@
         chip.type = 'button';
         chip.className = 'q-chip';
         if (state.selected) chip.classList.add('answered');
-        if (state.flagged) chip.classList.add('flagged');
+        if (state.flagged)  chip.classList.add('flagged');
         if (idx === currentIndex) chip.classList.add('current');
         chip.textContent = idx + 1;
         chip.addEventListener('click', () => {
@@ -992,121 +1023,78 @@
     }
 
     function updateSidebarProgress() {
-      const answeredCount = answers.filter(a => a.selected !== null).length;
-      sidebarProgressEl.textContent = `${answeredCount} / ${totalQuestions} answered`;
+      const answered = answers.filter(a => a.selected !== null).length;
+      sidebarProgressEl.textContent = `${answered} / ${totalQuestions} answered`;
     }
 
-    function goPrev() {
-      if (currentIndex > 0) {
-        currentIndex--;
-        renderQuestion();
-        renderQuestionGrid();
-      }
-    }
+    function finishExam(timedOut = false) {
+      if (timerId) { clearInterval(timerId); timerId = null; }
 
-    function goNext() {
-      if (currentIndex < totalQuestions - 1) {
-        currentIndex++;
-        renderQuestion();
-        renderQuestionGrid();
-      }
-    }
+      let correct = 0, incorrect = 0, unanswered = 0;
+      questions.forEach((q, i) => {
+        const sel = answers[i].selected;
+        if (!sel) unanswered++;
+        else if (sel === q.answer) correct++;
+        else incorrect++;
+      });
 
-    function finishExam(auto = false) {
-      if (!auto) {
-        const unansweredCount = answers.filter(a => a.selected === null).length;
-        const confirmMsg = unansweredCount > 0
-          ? `You still have ${unansweredCount} unanswered question(s). Submit anyway?`
-          : 'Submit your answers and see your score?';
-        if (!window.confirm(confirmMsg)) return;
-      }
-
-      if (timerId) {
-        clearInterval(timerId);
-        timerId = null;
-      }
-
-      const correctCount = answers.reduce((acc, a, idx) => {
-        return acc + (a.selected === questions[idx].answer ? 1 : 0);
-      }, 0);
-      const unansweredCount = answers.filter(a => a.selected === null).length;
-      const incorrectCount = totalQuestions - correctCount - unansweredCount;
-
-      const score = Math.round((correctCount / totalQuestions) * 1000);
-
-      scoreValueEl.textContent = `${score.toString().padStart(3, '0')} / 1000`;
+      const score = Math.round((correct / totalQuestions) * 1000);
       const passed = score >= 700;
+
+      scoreValueEl.textContent = `${score} / 1000`;
       scoreStatusEl.innerHTML = passed
-        ? '<strong>Pass‑ready trajectory.</strong> Keep reinforcing weak areas and domain weights.'
-        : '<strong>Below pass threshold.</strong> Use the review to focus on missed concepts.';
+        ? `<strong>PASS</strong> — ${correct} correct out of ${totalQuestions}`
+        : `<strong>FAIL</strong> — ${correct} correct out of ${totalQuestions} (need 700)`;
+      statCorrectEl.textContent   = correct;
+      statIncorrectEl.textContent = incorrect;
+      statUnansweredEl.textContent = unanswered;
 
-      statCorrectEl.textContent = correctCount;
-      statIncorrectEl.textContent = incorrectCount;
-      statUnansweredEl.textContent = unansweredCount;
-
-      buildReviewList();
+      reviewListEl.innerHTML = '';
+      questions.forEach((q, i) => {
+        const sel = answers[i].selected;
+        const isCorrect = sel === q.answer;
+        const item = document.createElement('div');
+        item.className = 'review-item';
+        item.innerHTML = `
+          <div class="review-header">
+            <span>Q${i + 1}${q.domain ? ' · ' + q.domain.toUpperCase() : ''}</span>
+            <span class="tag ${sel ? (isCorrect ? 'correct' : 'incorrect') : 'incorrect'}">${sel ? (isCorrect ? 'Correct' : 'Incorrect') : 'Unanswered'}</span>
+          </div>
+          <div class="review-q">${q.text}</div>
+          <div class="review-answer">
+            Your answer: <strong>${sel || '—'}</strong> &nbsp;·&nbsp; Correct: <strong>${q.answer}</strong><br/>
+            <span style="color:#6b7280">${q.explanation}</span>
+          </div>`;
+        reviewListEl.appendChild(item);
+      });
 
       examScreen.classList.add('hidden');
       resultScreen.classList.remove('hidden');
     }
 
-    function buildReviewList() {
-      reviewListEl.innerHTML = '';
-      questions.forEach((q, idx) => {
-        const state = answers[idx];
-        const isCorrect = state.selected === q.answer;
-        const container = document.createElement('div');
-        container.className = 'review-item';
+    // ─── Event listeners ──────────────────────────────────────────────────────
+    startBtn.addEventListener('click', () => initExam({ timed: true }));
+    demoBtn.addEventListener('click',  () => initExam({ timed: false, pool: DEMO_QUESTIONS }));
 
-        const header = document.createElement('div');
-        header.className = 'review-header';
-        const left = document.createElement('span');
-        left.textContent = `Q${idx + 1}`;
-        const right = document.createElement('span');
-        const tag = document.createElement('span');
-        tag.className = 'tag ' + (isCorrect ? 'correct' : 'incorrect');
-        tag.textContent = isCorrect ? 'Correct' : 'Incorrect';
-        right.appendChild(tag);
-        header.appendChild(left);
-        header.appendChild(right);
-
-        const qText = document.createElement('div');
-        qText.className = 'review-q';
-        qText.textContent = q.text;
-
-        const ansText = document.createElement('div');
-        ansText.className = 'review-answer';
-        const selectedLabel = state.selected ? `${state.selected}: ${q.options[state.selected]}` : 'No answer';
-        const correctLabel = `${q.answer}: ${q.options[q.answer]}`;
-        ansText.innerHTML = `<strong>Your answer:</strong> ${selectedLabel}<br><strong>Correct:</strong> ${correctLabel}<br><strong>Why:</strong> ${q.explanation}`;
-
-        container.appendChild(header);
-        container.appendChild(qText);
-        container.appendChild(ansText);
-        reviewListEl.appendChild(container);
-      });
-    }
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) { currentIndex--; renderQuestion(); renderQuestionGrid(); }
+    });
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < totalQuestions - 1) { currentIndex++; renderQuestion(); renderQuestionGrid(); }
+    });
+    finishBtn.addEventListener('click',      () => finishExam());
+    quickFinishBtn.addEventListener('click', () => finishExam());
 
     flagCheckbox.addEventListener('change', () => {
       answers[currentIndex].flagged = flagCheckbox.checked;
       renderQuestionGrid();
     });
 
-    prevBtn.addEventListener('click', goPrev);
-    nextBtn.addEventListener('click', goNext);
-    finishBtn.addEventListener('click', () => finishExam(false));
-    quickFinishBtn.addEventListener('click', () => finishExam(false));
-
-    startBtn.addEventListener('click', () => initExam({ timed: true }));
-    demoBtn.addEventListener('click', () => initExam({ timed: false }));
-
-    retakeBtn.addEventListener('click', () => initExam({ timed: true }));
+    retakeBtn.addEventListener('click', () => {
+      resultScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
     returnStartBtn.addEventListener('click', () => {
-      if (timerId) {
-        clearInterval(timerId);
-        timerId = null;
-      }
-      examScreen.classList.add('hidden');
       resultScreen.classList.add('hidden');
       startScreen.classList.remove('hidden');
     });
