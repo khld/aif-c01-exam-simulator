@@ -769,7 +769,7 @@
   </div>
 
   <script>
-    // ─── Fallback demo pool (used if questions.json fails to load) ───────────
+    // ─── Fallback demo pool ───────────────────────────────────────────────────
     const DEMO_QUESTIONS = [
       {
         id: "D1",
@@ -814,7 +814,7 @@
     ];
 
     // ─── State ────────────────────────────────────────────────────────────────
-    let FULL_BANK = [];   // loaded from questions.json
+    let FULL_BANK = [];
     let questions = [];
     let answers = [];
     let currentIndex = 0;
@@ -832,36 +832,35 @@
     const bankInfo       = document.getElementById('bank-info');
     const headerPill     = document.getElementById('header-pill-count');
 
-    const questionIndexEl  = document.getElementById('question-index');
-    const questionTextEl   = document.getElementById('question-text');
-    const optionsEl        = document.getElementById('options');
-    const flagCheckbox     = document.getElementById('flag-checkbox');
-    const timerValueEl     = document.getElementById('timer-value');
-    const timerDotEl       = document.getElementById('timer-dot');
-    const panelSubtitleEl  = document.getElementById('panel-subtitle');
-    const questionGridEl   = document.getElementById('question-grid');
+    const questionIndexEl   = document.getElementById('question-index');
+    const questionTextEl    = document.getElementById('question-text');
+    const optionsEl         = document.getElementById('options');
+    const flagCheckbox      = document.getElementById('flag-checkbox');
+    const timerValueEl      = document.getElementById('timer-value');
+    const timerDotEl        = document.getElementById('timer-dot');
+    const panelSubtitleEl   = document.getElementById('panel-subtitle');
+    const questionGridEl    = document.getElementById('question-grid');
     const sidebarProgressEl = document.getElementById('sidebar-progress');
-    const scoreValueEl     = document.getElementById('score-value');
-    const scoreStatusEl    = document.getElementById('score-status');
-    const statCorrectEl    = document.getElementById('stat-correct');
-    const statIncorrectEl  = document.getElementById('stat-incorrect');
-    const statUnansweredEl = document.getElementById('stat-unanswered');
-    const reviewListEl     = document.getElementById('review-list');
-    const startBtn         = document.getElementById('start-btn');
-    const demoBtn          = document.getElementById('demo-btn');
-    const prevBtn          = document.getElementById('prev-btn');
-    const nextBtn          = document.getElementById('next-btn');
-    const finishBtn        = document.getElementById('finish-btn');
-    const quickFinishBtn   = document.getElementById('quick-finish-btn');
-    const retakeBtn        = document.getElementById('retake-btn');
-    const returnStartBtn   = document.getElementById('return-start-btn');
+    const scoreValueEl      = document.getElementById('score-value');
+    const scoreStatusEl     = document.getElementById('score-status');
+    const statCorrectEl     = document.getElementById('stat-correct');
+    const statIncorrectEl   = document.getElementById('stat-incorrect');
+    const statUnansweredEl  = document.getElementById('stat-unanswered');
+    const reviewListEl      = document.getElementById('review-list');
+    const startBtn          = document.getElementById('start-btn');
+    const demoBtn           = document.getElementById('demo-btn');
+    const prevBtn           = document.getElementById('prev-btn');
+    const nextBtn           = document.getElementById('next-btn');
+    const finishBtn         = document.getElementById('finish-btn');
+    const quickFinishBtn    = document.getElementById('quick-finish-btn');
+    const retakeBtn         = document.getElementById('retake-btn');
+    const returnStartBtn    = document.getElementById('return-start-btn');
 
-    // ─── Load questions.json ──────────────────────────────────────────────────
-    // Normalises each entry so JS always sees { id, text, options, answer, explanation }
+    // ─── Normalise question shape ─────────────────────────────────────────────
     function normalise(q) {
       return {
-        id:          q.id          ?? q.id,
-        text:        q.text        ?? q.question ?? '',   // JSON uses "question", fallback to "text"
+        id:          q.id          ?? '',
+        text:        q.text        ?? q.question ?? '',
         options:     q.options     ?? {},
         answer:      q.answer      ?? '',
         explanation: q.explanation ?? '',
@@ -869,12 +868,20 @@
       };
     }
 
-    fetch('questions.json')
+    // ─── Load questions.json ──────────────────────────────────────────────────
+    // Use absolute path so it works correctly on Cloudflare Pages and any subdirectory.
+    fetch('/questions.json', { cache: 'no-cache' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        // Guard against Cloudflare returning an HTML error page with a 200 status
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json') && !ct.includes('text/plain') && !ct.includes('octet-stream')) {
+          throw new Error(`Unexpected content-type: ${ct}`);
+        }
         return r.json();
       })
       .then(data => {
+        if (!Array.isArray(data) || data.length === 0) throw new Error('Empty or invalid JSON array');
         FULL_BANK = data.map(normalise);
         const n = FULL_BANK.length;
         loadingMsg.classList.add('hidden');
@@ -885,13 +892,13 @@
         startBtn.textContent = `Start Exam (${Math.min(60, n)} Q)`;
       })
       .catch(err => {
-        console.warn('questions.json not found or invalid, using demo pool.', err);
+        console.warn('questions.json not available, using demo pool.', err);
         FULL_BANK = DEMO_QUESTIONS.slice();
         loadingMsg.classList.add('hidden');
         startActions.classList.remove('hidden');
         headerPill.textContent = '5 Questions · Demo';
         bankInfo.textContent = 'Demo mode — questions.json could not be loaded.';
-        startHint.textContent = 'questions.json not found. Running 5-question demo instead.';
+        startHint.textContent = '';
         startBtn.textContent = 'Start Demo Exam';
       });
 
@@ -968,7 +975,7 @@
       const state = answers[currentIndex];
 
       questionIndexEl.textContent = `Question ${currentIndex + 1} of ${totalQuestions}`;
-      questionTextEl.textContent = q.text;   // always normalised to .text
+      questionTextEl.textContent = q.text;
       flagCheckbox.checked = state.flagged;
 
       optionsEl.innerHTML = '';
